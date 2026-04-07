@@ -1,0 +1,1055 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI名片设计稿</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Noto Sans SC", "Microsoft YaHei", Arial, sans-serif;
+      background: #111827;
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .controls {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      background: rgba(255,255,255,0.1);
+      padding: 8px;
+      border-radius: 12px;
+      z-index: 10;
+    }
+    .controls button {
+      font-family: inherit;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 8px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: .2s;
+    }
+    .controls button.active {
+      border-color: #38bdf8;
+      color: #38bdf8;
+      box-shadow: 0 0 0 1px #38bdf8;
+    }
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+      100% { transform: translateY(0px); }
+    }
+    @keyframes shimmer {
+      0% { left: -150%; }
+      100% { left: 150%; }
+    }
+    @keyframes pulseText {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
+    .card-wrapper {
+      width: 100%;
+      max-width: 450px;
+      aspect-ratio: 90 / 54;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+      animation: float 6s ease-in-out infinite;
+    }
+    .card-link {
+      display: block;
+      width: 100%;
+      max-width: 450px;
+      text-decoration: none;
+      color: inherit;
+    }
+    .link-tip {
+      position: fixed;
+      left: 50%;
+      bottom: 20px;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.8);
+      color: #e2e8f0;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+      max-width: min(90vw, 760px);
+      text-align: center;
+      z-index: 12;
+      line-height: 1.5;
+    }
+    .link-tip code {
+      color: #7dd3fc;
+      word-break: break-all;
+    }
+    .card {
+      width: 100%;
+      height: 100%;
+      border-radius: 18px;
+      overflow: hidden;
+      display: flex;
+      transition: all .4s ease;
+      cursor: pointer;
+      position: relative;
+    }
+    .card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0) 100%);
+      transform: skewX(-20deg);
+      animation: shimmer 4s infinite;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .info-pane {
+      width: 55%;
+      padding: clamp(16px, 5%, 32px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      z-index: 2;
+    }
+    .image-pane {
+      width: 45%;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+      perspective: 800px;
+    }
+    .mobius-track {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      transform-style: preserve-3d;
+    }
+    .slide {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 120px;
+      height: 120px;
+      margin-top: -60px;
+      margin-left: -60px;
+      background-size: cover;
+      background-position: center;
+      border-radius: 16px;
+      border: 2px solid rgba(255,255,255,0.15);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+      transform-style: preserve-3d;
+      will-change: transform, opacity;
+    }
+    .company {
+      font-size: clamp(12px, 2.5vw, 14px);
+      font-weight: 600;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid;
+    }
+    .name {
+      font-size: clamp(18px, 4vw, 20px);
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .position {
+      font-size: clamp(12px, 2.5vw, 14px);
+      font-weight: 400;
+      margin-top: 4px;
+      opacity: .9;
+    }
+    .phone {
+      font-size: clamp(12px, 2.5vw, 14px);
+      font-weight: 400;
+      margin-top: 16px;
+    }
+    .cta-text {
+      margin-top: auto;
+      font-size: clamp(13px, 2.5vw, 15px);
+      font-weight: 600;
+      opacity: 0.8;
+      animation: pulseText 2s infinite;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* --- THEMES --- */
+    .card.theme-gold {
+      background: radial-gradient(circle at 100% 0%, #d4af37, #b8860b 40%, #1c1c1c 85%, #0a0a0a);
+      color: #F4EBD0;
+    }
+    .theme-gold .company { border-color: rgba(244, 235, 208, 0.3); }
+
+    .card.theme-geo {
+      background: #ffffff;
+      color: #374151;
+      position: relative;
+    }
+    .card.theme-geo::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: 
+        linear-gradient(105deg, transparent 40%, rgba(110, 219, 143, 0.15) 40.5%, rgba(110, 219, 143, 0.15) 60%, transparent 60.5%),
+        linear-gradient(-35deg, transparent 65%, rgba(66, 142, 126, 0.1) 65.5%, rgba(66, 142, 126, 0.1) 85%, transparent 85.5%),
+        linear-gradient(15deg, rgba(88, 192, 143, 0.05) 0%, rgba(88, 192, 143, 0.05) 100%);
+      z-index: 0;
+      pointer-events: none;
+    }
+    .card.theme-geo .info-pane { position: relative; z-index: 1; }
+    .theme-geo .company { border-color: rgba(66, 142, 126, 0.3); color: #2C5E50; }
+    .theme-geo .name { color: #2C5E50; }
+    .theme-geo .phone { font-weight: 600; color: #2C5E50; }
+
+    .card.theme-pearl {
+      background: radial-gradient(120% 90% at 10% 6%, rgba(255,255,255,.62) 0%, rgba(255,255,255,.18) 34%, rgba(255,255,255,0) 58%), linear-gradient(135deg, #fdf2f8 0%, #fbcfe8 24%, #c4b5fd 52%, #93c5fd 78%, #e0f2fe 100%);
+      color: #1f2937;
+    }
+    .theme-pearl .company { border-color: rgba(31, 41, 55, 0.2); }
+    .theme-pearl .phone { font-weight: 600; color: #4338ca; }
+
+    .card.theme-darkgold {
+      background: #2b2b36;
+      color: #ffffff;
+      position: relative;
+    }
+    .card.theme-darkgold::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -20%; right: -20%; bottom: -50%;
+      background: 
+        linear-gradient(45deg, transparent 48%, #d4af37 49%, #d4af37 51%, transparent 52%),
+        linear-gradient(-45deg, transparent 48%, #d4af37 49%, #d4af37 51%, transparent 52%);
+      background-size: 150px 150px;
+      z-index: 0;
+      opacity: 0.15;
+      pointer-events: none;
+    }
+    .card.theme-darkgold .info-pane { position: relative; z-index: 1; justify-content: flex-end; padding-bottom: 24px; }
+    .theme-darkgold .company { border-color: #d4af37; color: #d4af37; border-bottom: 1px solid #d4af37; margin-bottom: 16px; padding-bottom: 12px; }
+    .theme-darkgold .name { font-size: clamp(22px, 5vw, 26px); }
+    .theme-darkgold .position { margin-bottom: 16px; }
+
+    .card.theme-starry {
+      background: linear-gradient(135deg, #0a0a2e 0%, #1a1a4e 30%, #0d0d3b 60%, #050520 100%);
+      color: #e0e8ff;
+    }
+    .theme-starry .company { border-color: rgba(147, 157, 255, 0.4); color: #a5b4fc; }
+    .theme-starry .name { color: #ffffff; text-shadow: 0 0 10px rgba(147, 157, 255, 0.5); }
+    .theme-starry .phone { color: #818cf8; font-weight: 600; }
+    .theme-starry canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .theme-starry .info-pane { position: relative; z-index: 2; }
+    .theme-starry .image-pane { position: relative; z-index: 2; }
+
+    .card.theme-mars {
+      background: linear-gradient(180deg, #4a1a0a 0%, #8b3a1a 25%, #c45a2a 50%, #d4703a 75%, #a04020 100%);
+      color: #ffe0c8;
+    }
+    .card.theme-mars::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 40%;
+      background: radial-gradient(ellipse at 50% 100%, #6b2a10 0%, transparent 70%);
+      z-index: 0;
+      pointer-events: none;
+    }
+    .theme-mars .company { border-color: rgba(255, 160, 80, 0.5); color: #ff9050; }
+    .theme-mars .name { color: #fff5ee; text-shadow: 0 0 15px rgba(255, 100, 40, 0.6); }
+    .theme-mars .phone { color: #ff8060; font-weight: 600; }
+    .theme-mars canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    .theme-mars .info-pane { position: relative; z-index: 2; }
+    .theme-mars .image-pane { position: relative; z-index: 2; }
+
+    .card.theme-cyber {
+      background: linear-gradient(135deg, #0a0a1a 0%, #0d0d2b 50%, #0a0a1a 100%);
+      color: #00ffcc;
+    }
+    .theme-cyber .company { border-color: #00ffcc; color: #00ffcc; text-shadow: 0 0 8px #00ffcc; }
+    .theme-cyber .name { color: #00ffcc; text-shadow: 0 0 15px #00ffcc, 0 0 30px #00ffcc; font-family: 'Courier New', monospace; }
+    .theme-cyber .phone { color: #ff00ff; font-weight: 600; text-shadow: 0 0 8px #ff00ff; }
+    .theme-cyber canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    .theme-cyber .info-pane { position: relative; z-index: 2; }
+    .theme-cyber .image-pane { position: relative; z-index: 2; }
+
+    .card.theme-nebula {
+      background: linear-gradient(135deg, #1a0030 0%, #2d004d 30%, #0d003d 60%, #000020 100%);
+      color: #d8b4fe;
+    }
+    .theme-nebula .company { border-color: rgba(200, 100, 255, 0.5); color: #c084fc; }
+    .theme-nebula .name { color: #ffffff; text-shadow: 0 0 20px rgba(180, 100, 255, 0.8); }
+    .theme-nebula .phone { color: #e879f9; font-weight: 600; }
+    .theme-nebula canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    .theme-nebula .info-pane { position: relative; z-index: 2; }
+    .theme-nebula .image-pane { position: relative; z-index: 2; }
+
+    .card.theme-aurora {
+      background: linear-gradient(180deg, #0a1628 0%, #0d2847 40%, #0a3d2e 70%, #0a1628 100%);
+      color: #a7f3d0;
+    }
+    .theme-aurora .company { border-color: rgba(0, 255, 150, 0.4); color: #34d399; }
+    .theme-aurora .name { color: #ffffff; text-shadow: 0 0 15px rgba(0, 255, 150, 0.6); }
+    .theme-aurora .phone { color: #6ee7b7; font-weight: 600; }
+    .theme-aurora canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    .theme-aurora .info-pane { position: relative; z-index: 2; }
+    .theme-aurora .image-pane { position: relative; z-index: 2; }
+
+    .card.theme-matrix {
+      background: #000a00;
+      color: #00ff41;
+    }
+    .theme-matrix .company { border-color: #00ff41; color: #00ff41; }
+    .theme-matrix .name { color: #00ff41; text-shadow: 0 0 10px #00ff41; font-family: 'Courier New', monospace; }
+    .theme-matrix .phone { color: #00cc33; font-weight: 600; }
+    .theme-matrix canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    .theme-matrix .info-pane { position: relative; z-index: 2; }
+    .theme-matrix .image-pane { position: relative; z-index: 2; }
+
+    .card.theme-galaxy {
+      background: radial-gradient(ellipse at center, #1a0a2e 0%, #0d0d2b 40%, #050510 100%);
+      color: #c4b5fd;
+    }
+    .theme-galaxy .company { border-color: rgba(167, 139, 250, 0.5); color: #a78bfa; }
+    .theme-galaxy .name { color: #ffffff; text-shadow: 0 0 20px rgba(139, 92, 246, 0.7); }
+    .theme-galaxy .phone { color: #818cf8; font-weight: 600; }
+    .theme-galaxy canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    .theme-galaxy .info-pane { position: relative; z-index: 2; }
+    .theme-galaxy .image-pane { position: relative; z-index: 2; }
+
+    .card.theme-hologram {
+      background: linear-gradient(135deg, #001a1a 0%, #003333 30%, #002222 60%, #001111 100%);
+      color: #00ffff;
+    }
+    .card.theme-hologram::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 255, 0.03) 2px, rgba(0, 255, 255, 0.03) 4px);
+      z-index: 1;
+      pointer-events: none;
+    }
+    .theme-hologram .company { border-color: #00ffff; color: #00ffff; text-shadow: 0 0 10px #00ffff; }
+    .theme-hologram .name { color: #00ffff; text-shadow: 0 0 15px #00ffff, 0 0 30px rgba(0, 255, 255, 0.5); }
+    .theme-hologram .phone { color: #80ffff; font-weight: 600; }
+    .theme-hologram canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    .theme-hologram .info-pane { position: relative; z-index: 2; }
+    .theme-hologram .image-pane { position: relative; z-index: 2; }
+
+    .card.theme-quantum {
+      background: linear-gradient(135deg, #0a0a2e 0%, #1a0a3e 30%, #0a1a3e 60%, #0a0a2e 100%);
+      color: #93c5fd;
+    }
+    .theme-quantum .company { border-color: rgba(96, 165, 250, 0.5); color: #60a5fa; }
+    .theme-quantum .name { color: #ffffff; text-shadow: 0 0 15px rgba(96, 165, 250, 0.7), 0 0 30px rgba(59, 130, 246, 0.4); }
+    .theme-quantum .phone { color: #93c5fd; font-weight: 600; }
+    .theme-quantum canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    .theme-quantum .info-pane { position: relative; z-index: 2; }
+    .theme-quantum .image-pane { position: relative; z-index: 2; }
+
+    .card.theme-titan {
+      background: linear-gradient(180deg, #0a1a2a 0%, #1a3a4a 30%, #2a4a3a 60%, #1a2a1a 100%);
+      color: #a3e4d7;
+    }
+    .theme-titan .company { border-color: rgba(100, 200, 180, 0.5); color: #5eead4; }
+    .theme-titan .name { color: #ffffff; text-shadow: 0 0 15px rgba(94, 234, 212, 0.5); }
+    .theme-titan .phone { color: #2dd4bf; font-weight: 600; }
+    .theme-titan canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    .theme-titan .info-pane { position: relative; z-index: 2; }
+    .theme-titan .image-pane { position: relative; z-index: 2; }
+  </style>
+</head>
+<body>
+
+  <div class="controls" id="themeControls">
+    <button data-theme="gold" class="active">黑金色</button>
+    <button data-theme="pearl">幻彩珠光</button>
+    <button data-theme="geo">几何翠绿</button>
+    <button data-theme="darkgold">暗夜金线</button>
+    <button data-theme="starry">璀璨星空</button>
+    <button data-theme="mars">火星殖民</button>
+    <button data-theme="cyber">赛博朋克</button>
+    <button data-theme="nebula">紫色星云</button>
+    <button data-theme="aurora">极光幻境</button>
+    <button data-theme="matrix">矩阵代码</button>
+    <button data-theme="galaxy">银河漩涡</button>
+    <button data-theme="hologram">全息投影</button>
+    <button data-theme="quantum">量子空间</button>
+    <button data-theme="titan">泰坦星</button>
+  </div>
+
+  <a id="cardLink" class="card-link" href="#" target="_self" rel="noopener noreferrer">
+    <div class="card-wrapper">
+      <div class="card theme-gold" id="card">
+        <div class="info-pane">
+          <div class="company">{{COMPANY_NAME}}</div>
+          <div class="name">{{NAME}}</div>
+          <div class="position">{{POSITION}}</div>
+          <div class="phone">{{PHONE}}</div>
+          <div class="cta-text">点击名片进入AI超级网站</div>
+        </div>
+        <div class="image-pane" id="cardImage" style="background-image: url('{{RIGHT_IMAGE_URL}}')">
+        </div>
+      </div>
+    </div>
+  </a>
+  <div class="link-tip" id="linkTip"></div>
+
+  <script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
+  <script>
+    const card = document.getElementById('card');
+    const cardImage = document.getElementById('cardImage');
+    const cardLink = document.getElementById('cardLink');
+    const linkTip = document.getElementById('linkTip');
+    const controls = document.getElementById('themeControls');
+    const themeButtons = controls.querySelectorAll('button');
+
+    const placeholders = {
+      name: "陈 非",
+      position: "海外市场总监",
+      company: "非洲之光小家电有限公司",
+      phone: "+254 712 345 678",
+      imageUrls: [
+        "https://images.unsplash.com/photo-1585515320310-259814833e62?q=80&w=800&auto=format&fit=crop", // 烤面包机和水壶
+        "https://images.unsplash.com/photo-1578643463396-0997cb5328c1?q=80&w=800&auto=format&fit=crop"  // 搅拌机
+      ]
+    };
+
+    let animationReqId;
+    let rotation = 0;
+    let lastTimestamp = 0;
+    const queryParams = new URLSearchParams(window.location.search);
+    const aiWebTarget = queryParams.get('target') || '';
+    const autoJumpEnabled = queryParams.get('autojump') === '1';
+    const autoJumpDelay = Math.max(0, Number(queryParams.get('delay') || 120));
+    const signApi = queryParams.get('signApi') || '/wechat-sign/api/wechat/js-sdk-signature';
+
+    function isValidTarget(url) {
+      return /^https?:\/\//i.test(url);
+    }
+
+    function setupCardLink() {
+      if (isValidTarget(aiWebTarget)) {
+        cardLink.href = aiWebTarget;
+        linkTip.innerHTML = `当前跳转链接：<code>${aiWebTarget}</code><br>分享时可用：<code>?target=你的链接&autojump=1</code>`;
+        return;
+      }
+      cardLink.href = '#';
+      linkTip.innerHTML = '请在地址栏加 ?target=https://你的域名/AIweb3.html 后再分享';
+    }
+
+    cardLink.addEventListener('click', (e) => {
+      if (!isValidTarget(aiWebTarget)) {
+        e.preventDefault();
+        alert('请先设置可访问的 http(s) 链接，再分享到微信');
+      }
+    });
+
+    function runAutoJumpIfNeeded() {
+      if (!autoJumpEnabled) return false;
+      if (!isValidTarget(aiWebTarget)) return false;
+      linkTip.innerHTML = `正在跳转到 AIweb：<code>${aiWebTarget}</code>`;
+      setTimeout(() => {
+        window.location.replace(aiWebTarget);
+      }, autoJumpDelay);
+      return true;
+    }
+
+    function isWechat() {
+      return /micromessenger/i.test(navigator.userAgent);
+    }
+
+    function getShareLink() {
+      const customShareLink = queryParams.get('shareLink');
+      if (isValidTarget(customShareLink || '')) return customShareLink;
+      if (isValidTarget(aiWebTarget)) return aiWebTarget;
+      return window.location.href.split('#')[0];
+    }
+
+    function buildShareData() {
+      const title = queryParams.get('shareTitle') || `${placeholders.name}｜AI名片`;
+      const desc = queryParams.get('shareDesc') || `${placeholders.company} · ${placeholders.position}`;
+      const link = getShareLink();
+      const imgUrl = queryParams.get('shareImg') || placeholders.imageUrls[0];
+      return { title, desc, link, imgUrl };
+    }
+
+    function normalizeSignPayload(payload) {
+      if (!payload) return null;
+      const data = payload.data || payload.result || payload;
+      const appId = data.appId || data.appid;
+      const timestamp = data.timestamp;
+      const nonceStr = data.nonceStr || data.noncestr;
+      const signature = data.signature;
+      if (!appId || !timestamp || !nonceStr || !signature) return null;
+      return { appId, timestamp: Number(timestamp), nonceStr, signature };
+    }
+
+    async function initWechatJSSDKShare() {
+      if (!isWechat()) return;
+      if (!window.wx) return;
+      const signUrl = window.location.href.split('#')[0];
+      try {
+        const resp = await fetch(`${signApi}?url=${encodeURIComponent(signUrl)}`, { credentials: 'include' });
+        if (!resp.ok) throw new Error(`签名接口状态异常: ${resp.status}`);
+        const json = await resp.json();
+        const signData = normalizeSignPayload(json);
+        if (!signData) throw new Error('签名字段不完整');
+        const shareData = buildShareData();
+        window.wx.config({
+          debug: false,
+          appId: signData.appId,
+          timestamp: signData.timestamp,
+          nonceStr: signData.nonceStr,
+          signature: signData.signature,
+          jsApiList: ['updateAppMessageShareData', 'updateTimelineShareData']
+        });
+        window.wx.ready(() => {
+          window.wx.updateAppMessageShareData(shareData);
+          window.wx.updateTimelineShareData(shareData);
+          linkTip.innerHTML += `<br>微信分享已配置：<code>${shareData.link}</code>`;
+        });
+        window.wx.error((err) => {
+          linkTip.innerHTML += `<br>微信分享配置失败：<code>${err.errMsg || 'unknown'}</code>`;
+        });
+      } catch (err) {
+        linkTip.innerHTML += `<br>签名接口调用失败：<code>${err.message}</code>`;
+      }
+    }
+
+    function fillData(data) {
+      if (animationReqId) cancelAnimationFrame(animationReqId);
+      
+      let slidesHtml = '';
+      let displayUrls = [];
+      if (data.imageUrls && data.imageUrls.length > 0) {
+        displayUrls = [...data.imageUrls];
+        // 自动补齐到4张图片以保证3D环绕效果
+        if (displayUrls.length === 2) {
+          displayUrls.push(displayUrls[0], displayUrls[1]);
+        }
+      } else if (data.imageUrl) {
+        displayUrls = [data.imageUrl];
+      }
+
+      displayUrls.forEach((url, index) => {
+        slidesHtml += `<div class="slide" style="background-image: url('${url}')"></div>`;
+      });
+
+      card.innerHTML = `
+        <div class="info-pane">
+          <div class="company">${data.company}</div>
+          <div class="name">${data.name}</div>
+          <div class="position">${data.position}</div>
+          <div class="phone">${data.phone}</div>
+          <div class="cta-text">点击名片进入AI超级网站</div>
+        </div>
+        <div class="image-pane">
+          <div class="mobius-track" id="mobiusTrack">
+            ${slidesHtml}
+          </div>
+        </div>
+      `;
+
+      const track = card.querySelector('#mobiusTrack');
+      const slides = track ? track.querySelectorAll('.slide') : [];
+      
+      if (slides.length > 1) {
+        function animateMobius(timestamp) {
+          if (!lastTimestamp) lastTimestamp = timestamp;
+          const delta = timestamp - lastTimestamp;
+          lastTimestamp = timestamp;
+
+          rotation += delta * 0.0006; // 旋转速度
+          if (rotation >= Math.PI * 2) {
+            rotation -= Math.PI * 2;
+          }
+
+          const total = slides.length;
+          const radiusX = 65;
+          const radiusY = 25;
+          const radiusZ = 90;
+          const twist = 20;
+
+          slides.forEach((slide, index) => {
+            const angle = (index / total) * Math.PI * 2 + rotation;
+            const x = Math.sin(angle) * radiusX;
+            const y = Math.sin(angle * 2) * radiusY * 0.5;
+            const z = Math.cos(angle) * radiusZ;
+            const scale = 0.75 + ((z + radiusZ) / (radiusZ * 2)) * 0.35; // 近大远小
+            const opacity = 0.3 + ((z + radiusZ) / (radiusZ * 2)) * 0.7; // 近实远虚
+            
+            const twistAngle = Math.sin(angle) * twist;
+            
+            slide.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotateY(${twistAngle}deg) scale(${scale})`;
+            slide.style.opacity = opacity.toFixed(2);
+            slide.style.zIndex = Math.round(z + 100);
+          });
+
+          animationReqId = requestAnimationFrame(animateMobius);
+        }
+        animationReqId = requestAnimationFrame(animateMobius);
+      } else if (slides.length === 1) {
+         slides[0].style.transform = `translate3d(0,0,0) scale(1)`;
+         slides[0].style.opacity = '1';
+      }
+    }
+
+    controls.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+
+      themeButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const theme = btn.dataset.theme;
+      card.className = 'card'; // Reset classes
+      card.classList.add(`theme-${theme}`);
+
+      const canvasFx = {
+        starry: initStarrySky,
+        mars: initMars,
+        cyber: initCyber,
+        nebula: initNebula,
+        aurora: initAurora,
+        matrix: initMatrix,
+        galaxy: initGalaxy,
+        hologram: initHologram,
+        quantum: initQuantum,
+        titan: initTitan
+      };
+
+      if (canvasFx[theme]) {
+        canvasFx[theme]();
+      } else {
+        const canvas = card.querySelector('canvas');
+        if (canvas) canvas.remove();
+      }
+    });
+
+    let currentFx = null;
+
+    function clearCanvas() {
+      if (currentFx) { cancelAnimationFrame(currentFx); currentFx = null; }
+      const c = card.querySelector('canvas');
+      if (c) c.remove();
+    }
+
+    function getCtx() {
+      clearCanvas();
+      const canvas = document.createElement('canvas');
+      card.appendChild(canvas);
+      const ctx = canvas.getContext('2d');
+      const rect = card.getBoundingClientRect();
+      canvas.width = rect.width * 2;
+      canvas.height = rect.height * 2;
+      ctx.scale(2, 2);
+      return { ctx, w: rect.width, h: rect.height };
+    }
+
+    function initStarrySky() {
+      const { ctx, w, h } = getCtx();
+      const stars = [];
+      for (let i = 0; i < 120; i++) {
+        stars.push({ x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.5 + 0.3, alpha: Math.random(), speed: Math.random() * 0.02 + 0.005, dir: Math.random() > 0.5 ? 1 : -1 });
+      }
+      const shootingStars = [];
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        const grd = ctx.createRadialGradient(w * 0.7, h * 0.3, 0, w * 0.7, h * 0.3, w * 0.5);
+        grd.addColorStop(0, 'rgba(100, 80, 180, 0.08)');
+        grd.addColorStop(1, 'transparent');
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, w, h);
+        const grd2 = ctx.createRadialGradient(w * 0.2, h * 0.8, 0, w * 0.2, h * 0.8, w * 0.4);
+        grd2.addColorStop(0, 'rgba(60, 100, 200, 0.06)');
+        grd2.addColorStop(1, 'transparent');
+        ctx.fillStyle = grd2;
+        ctx.fillRect(0, 0, w, h);
+        stars.forEach(s => {
+          s.alpha += s.speed * s.dir;
+          if (s.alpha >= 1) { s.alpha = 1; s.dir = -1; }
+          if (s.alpha <= 0.1) { s.alpha = 0.1; s.dir = 1; }
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
+          ctx.fill();
+          if (s.r > 1.2) {
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r * 2.5, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(180, 200, 255, ${s.alpha * 0.15})`;
+            ctx.fill();
+          }
+        });
+        if (Math.random() < 0.008 && shootingStars.length < 2) {
+          shootingStars.push({ x: Math.random() * w, y: 0, len: Math.random() * 60 + 30, speed: Math.random() * 8 + 6, alpha: 1, angle: Math.PI / 4 + (Math.random() - 0.5) * 0.3 });
+        }
+        for (let i = shootingStars.length - 1; i >= 0; i--) {
+          const ss = shootingStars[i];
+          ss.x += Math.cos(ss.angle) * ss.speed;
+          ss.y += Math.sin(ss.angle) * ss.speed;
+          ss.alpha -= 0.012;
+          if (ss.alpha <= 0 || ss.y > h) { shootingStars.splice(i, 1); continue; }
+          const tailX = ss.x - Math.cos(ss.angle) * ss.len;
+          const tailY = ss.y - Math.sin(ss.angle) * ss.len;
+          const lineGrad = ctx.createLinearGradient(tailX, tailY, ss.x, ss.y);
+          lineGrad.addColorStop(0, `rgba(255, 255, 255, 0)`);
+          lineGrad.addColorStop(1, `rgba(255, 255, 255, ${ss.alpha})`);
+          ctx.beginPath();
+          ctx.moveTo(tailX, tailY);
+          ctx.lineTo(ss.x, ss.y);
+          ctx.strokeStyle = lineGrad;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(ss.x, ss.y, 2, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255, 255, 255, ${ss.alpha})`;
+          ctx.fill();
+        }
+        currentFx = requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    function initMars() {
+      const { ctx, w, h } = getCtx();
+      const dust = [];
+      for (let i = 0; i < 60; i++) {
+        dust.push({ x: Math.random() * w, y: Math.random() * h, r: Math.random() * 2 + 0.5, speed: Math.random() * 0.5 + 0.2, alpha: Math.random() * 0.5 + 0.2 });
+      }
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        const grd = ctx.createRadialGradient(w * 0.5, h * 0.8, 10, w * 0.5, h * 0.8, w * 0.7);
+        grd.addColorStop(0, 'rgba(200, 80, 20, 0.15)');
+        grd.addColorStop(1, 'transparent');
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, w, h);
+        dust.forEach(d => {
+          d.x += d.speed;
+          d.y += Math.sin(d.x * 0.05) * 0.3;
+          if (d.x > w) { d.x = 0; d.y = Math.random() * h; }
+          ctx.beginPath();
+          ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(210, 120, 50, ${d.alpha})`;
+          ctx.fill();
+        });
+        if (Math.random() < 0.005) {
+          const sx = Math.random() * w;
+          ctx.beginPath();
+          ctx.arc(sx, h * 0.15, 3, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255, 200, 150, 0.8)';
+          ctx.fill();
+          const glow = ctx.createRadialGradient(sx, h * 0.15, 0, sx, h * 0.15, 15);
+          glow.addColorStop(0, 'rgba(255, 180, 100, 0.3)');
+          glow.addColorStop(1, 'transparent');
+          ctx.fillStyle = glow;
+          ctx.fillRect(sx - 20, h * 0.15 - 20, 40, 40);
+        }
+        currentFx = requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    function initCyber() {
+      const { ctx, w, h } = getCtx();
+      const lines = [];
+      for (let i = 0; i < 20; i++) {
+        lines.push({ y: Math.random() * h, speed: Math.random() * 2 + 1, alpha: Math.random() * 0.3 + 0.1, color: Math.random() > 0.5 ? '0, 255, 204' : '255, 0, 255' });
+      }
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, w, h);
+        lines.forEach(l => {
+          l.y += l.speed;
+          if (l.y > h) l.y = 0;
+          ctx.beginPath();
+          ctx.moveTo(0, l.y);
+          ctx.lineTo(w, l.y);
+          ctx.strokeStyle = `rgba(${l.color}, ${l.alpha})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
+        if (Math.random() < 0.05) {
+          const x = Math.random() * w;
+          const y = Math.random() * h;
+          ctx.font = '8px monospace';
+          ctx.fillStyle = `rgba(0, 255, 204, ${Math.random() * 0.5 + 0.3})`;
+          ctx.fillText(Math.random() > 0.5 ? '1' : '0', x, y);
+        }
+        currentFx = requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    function initNebula() {
+      const { ctx, w, h } = getCtx();
+      let t = 0;
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        t += 0.005;
+        for (let i = 0; i < 5; i++) {
+          const cx = w * 0.5 + Math.sin(t + i * 1.2) * w * 0.3;
+          const cy = h * 0.5 + Math.cos(t * 0.7 + i * 0.8) * h * 0.3;
+          const r = 40 + Math.sin(t + i) * 20;
+          const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+          const colors = ['180, 50, 255', '100, 50, 255', '200, 100, 255', '50, 100, 255', '255, 50, 200'];
+          grd.addColorStop(0, `rgba(${colors[i]}, 0.12)`);
+          grd.addColorStop(1, 'transparent');
+          ctx.fillStyle = grd;
+          ctx.fillRect(0, 0, w, h);
+        }
+        for (let i = 0; i < 80; i++) {
+          const x = (Math.sin(i * 7.3 + t * 0.3) * 0.5 + 0.5) * w;
+          const y = (Math.cos(i * 5.1 + t * 0.2) * 0.5 + 0.5) * h;
+          ctx.beginPath();
+          ctx.arc(x, y, 1, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(200, 180, 255, ${0.3 + Math.sin(t + i) * 0.2})`;
+          ctx.fill();
+        }
+        currentFx = requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    function initAurora() {
+      const { ctx, w, h } = getCtx();
+      let t = 0;
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        t += 0.01;
+        for (let band = 0; band < 3; band++) {
+          ctx.beginPath();
+          const baseY = h * 0.3 + band * 25;
+          ctx.moveTo(0, baseY);
+          for (let x = 0; x <= w; x += 2) {
+            const y = baseY + Math.sin(x * 0.02 + t + band * 0.5) * 15 + Math.sin(x * 0.05 + t * 1.5) * 8;
+            ctx.lineTo(x, y);
+          }
+          ctx.lineTo(w, baseY + 40);
+          for (let x = w; x >= 0; x -= 2) {
+            const y = baseY + 40 + Math.sin(x * 0.02 + t + band * 0.5) * 10;
+            ctx.lineTo(x, y);
+          }
+          ctx.closePath();
+          const colors = ['rgba(0, 255, 150, 0.08)', 'rgba(0, 200, 255, 0.06)', 'rgba(100, 255, 100, 0.05)'];
+          ctx.fillStyle = colors[band];
+          ctx.fill();
+        }
+        for (let i = 0; i < 50; i++) {
+          const x = (Math.sin(i * 3.7) * 0.5 + 0.5) * w;
+          const y = (Math.cos(i * 2.3) * 0.5 + 0.5) * h;
+          ctx.beginPath();
+          ctx.arc(x, y, 0.8, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(200, 255, 220, ${0.2 + Math.sin(t * 2 + i) * 0.15})`;
+          ctx.fill();
+        }
+        currentFx = requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    function initMatrix() {
+      const { ctx, w, h } = getCtx();
+      const fontSize = 10;
+      const columns = Math.floor(w / fontSize);
+      const drops = Array(columns).fill(1);
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      function draw() {
+        ctx.fillStyle = 'rgba(0, 10, 0, 0.05)';
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = '#00ff41';
+        ctx.font = `${fontSize}px monospace`;
+        for (let i = 0; i < drops.length; i++) {
+          const text = chars[Math.floor(Math.random() * chars.length)];
+          ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+          if (drops[i] * fontSize > h && Math.random() > 0.975) drops[i] = 0;
+          drops[i]++;
+        }
+        currentFx = requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    function initGalaxy() {
+      const { ctx, w, h } = getCtx();
+      const stars = [];
+      for (let i = 0; i < 200; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * Math.min(w, h) * 0.45;
+        stars.push({ angle, dist, speed: 0.002 + Math.random() * 0.003, r: Math.random() * 1.5 + 0.3, alpha: Math.random() * 0.5 + 0.5 });
+      }
+      let t = 0;
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        t += 0.002;
+        const cx = w / 2, cy = h / 2;
+        const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 30);
+        grd.addColorStop(0, 'rgba(200, 180, 255, 0.3)');
+        grd.addColorStop(1, 'transparent');
+        ctx.fillStyle = grd;
+        ctx.fillRect(cx - 40, cy - 40, 80, 80);
+        stars.forEach(s => {
+          s.angle += s.speed;
+          const x = cx + Math.cos(s.angle) * s.dist;
+          const y = cy + Math.sin(s.angle) * s.dist * 0.6;
+          ctx.beginPath();
+          ctx.arc(x, y, s.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(200, 180, 255, ${s.alpha * (0.7 + Math.sin(t + s.angle) * 0.3)})`;
+          ctx.fill();
+        });
+        currentFx = requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    function initHologram() {
+      const { ctx, w, h } = getCtx();
+      let t = 0;
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        t += 0.02;
+        const flicker = 0.8 + Math.sin(t * 10) * 0.1 + Math.random() * 0.05;
+        for (let y = 0; y < h; y += 3) {
+          const alpha = (0.02 + Math.sin(y * 0.1 + t) * 0.01) * flicker;
+          ctx.fillStyle = `rgba(0, 255, 255, ${alpha})`;
+          ctx.fillRect(0, y, w, 1);
+        }
+        const cx = w / 2, cy = h / 2;
+        for (let i = 0; i < 3; i++) {
+          const r = 30 + i * 25 + Math.sin(t + i) * 5;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(0, 255, 255, ${0.15 * flicker})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+        if (Math.random() < 0.03) {
+          ctx.fillStyle = `rgba(0, 255, 255, ${0.1 * flicker})`;
+          ctx.fillRect(0, Math.random() * h, w, 2);
+        }
+        currentFx = requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    function initQuantum() {
+      const { ctx, w, h } = getCtx();
+      const nodes = [];
+      for (let i = 0; i < 25; i++) {
+        nodes.push({ x: Math.random() * w, y: Math.random() * h, vx: (Math.random() - 0.5) * 0.8, vy: (Math.random() - 0.5) * 0.8, r: Math.random() * 3 + 1 });
+      }
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        nodes.forEach(n => {
+          n.x += n.vx;
+          n.y += n.vy;
+          if (n.x < 0 || n.x > w) n.vx *= -1;
+          if (n.y < 0 || n.y > h) n.vy *= -1;
+        });
+        for (let i = 0; i < nodes.length; i++) {
+          for (let j = i + 1; j < nodes.length; j++) {
+            const dx = nodes[i].x - nodes[j].x;
+            const dy = nodes[i].y - nodes[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 80) {
+              ctx.beginPath();
+              ctx.moveTo(nodes[i].x, nodes[i].y);
+              ctx.lineTo(nodes[j].x, nodes[j].y);
+              ctx.strokeStyle = `rgba(96, 165, 250, ${1 - dist / 80})`;
+              ctx.lineWidth = 0.5;
+              ctx.stroke();
+            }
+          }
+        }
+        nodes.forEach(n => {
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(147, 197, 253, 0.8)';
+          ctx.fill();
+          const grd = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 3);
+          grd.addColorStop(0, 'rgba(96, 165, 250, 0.2)');
+          grd.addColorStop(1, 'transparent');
+          ctx.fillStyle = grd;
+          ctx.fillRect(n.x - n.r * 3, n.y - n.r * 3, n.r * 6, n.r * 6);
+        });
+        currentFx = requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    function initTitan() {
+      const { ctx, w, h } = getCtx();
+      const ringColors = [
+        { r: 255, g: 0, b: 100 },
+        { r: 0, g: 255, b: 200 },
+        { r: 255, g: 200, b: 0 },
+        { r: 100, g: 100, b: 255 },
+        { r: 255, g: 50, b: 50 },
+        { r: 0, g: 255, b: 100 },
+        { r: 255, g: 100, b: 255 },
+        { r: 50, g: 200, b: 255 }
+      ];
+      const rings = [];
+      for (let i = 0; i < 8; i++) {
+        rings.push({ r: 40 + i * 12, alpha: 0.25 + Math.random() * 0.25, speed: 0.001 + Math.random() * 0.002, offset: Math.random() * Math.PI * 2, color: ringColors[i] });
+      }
+      let t = 0;
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        t += 0.005;
+        const cx = w / 2, cy = h / 2;
+        rings.forEach((ring, idx) => {
+          const c = ring.color;
+          const pulse = 0.6 + Math.sin(t * 2 + ring.offset) * 0.4;
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, ring.r, ring.r * 0.3, 0, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(${c.r}, ${c.g}, ${c.b}, ${ring.alpha * pulse})`;
+          ctx.lineWidth = 2;
+          ctx.shadowColor = `rgba(${c.r}, ${c.g}, ${c.b}, 0.6)`;
+          ctx.shadowBlur = 8;
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+        });
+        for (let i = 0; i < 40; i++) {
+          const angle = (i / 40) * Math.PI * 2 + t * 0.5;
+          const dist = 50 + Math.sin(angle * 3 + t) * 20;
+          const x = cx + Math.cos(angle) * dist;
+          const y = cy + Math.sin(angle) * dist * 0.4;
+          ctx.beginPath();
+          ctx.arc(x, y, 1.2, 0, Math.PI * 2);
+          const sparkle = 0.4 + Math.sin(t * 3 + i) * 0.4;
+          ctx.fillStyle = `rgba(255, 255, 255, ${sparkle})`;
+          ctx.fill();
+        }
+        currentFx = requestAnimationFrame(draw);
+      }
+      draw();
+    }
+    
+    // Initial fill with placeholders
+    setupCardLink();
+    initWechatJSSDKShare();
+    runAutoJumpIfNeeded();
+    fillData(placeholders);
+  </script>
+</body>
+</html>
